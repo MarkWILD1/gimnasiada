@@ -1,0 +1,254 @@
+:root {
+  --bg: #f3f6f4;
+  --surface: #ffffff;
+  --ink: #1a2e24;
+  --muted: #5a6f64;
+  --line: #d5e0da;
+  --accent: #1f6b4a;
+  --accent-soft: #e4f3eb;
+  --ok: #0d7a45;
+  --ok-bg: #e6f7ee;
+  --danger: #8a3b2b;
+  --radius: 12px;
+  --shadow: 0 8px 24px rgba(26, 46, 36, 0.08);
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, #d8efe3 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, #e8f0ea 0%, transparent 50%),
+    var(--bg);
+  line-height: 1.45;
+}
+
+.site-header,
+.site-footer,
+.app {
+  width: min(920px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.site-header {
+  padding: 2rem 0 1.25rem;
+}
+
+.site-header h1 {
+  margin: 0 0 0.2rem;
+  font-size: clamp(1.9rem, 5vw, 2.5rem);
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+.site-header h2 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.15rem, 3vw, 1.45rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.lead {
+  margin: 0;
+  color: var(--muted);
+  max-width: 42rem;
+}
+
+.app {
+  display: grid;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+.session {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.session-title {
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--line);
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.block {
+  padding: 1rem 1.1rem 0.4rem;
+}
+
+.block + .block {
+  border-top: 1px solid var(--line);
+}
+
+.block-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.school-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.school-item {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, auto) 1fr;
+  gap: 0.65rem 0.9rem;
+  align-items: center;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fafcfb;
+}
+
+.school-item.is-ok {
+  border-color: #b7e4c7;
+  background: var(--ok-bg);
+}
+
+.school-id {
+  font-size: 1.25rem;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.school-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+.filename {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: #eef3f0;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+}
+
+.school-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:hover,
+.btn:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--danger);
+  font-weight: 500;
+  font-size: 0.82rem;
+  padding-inline: 0.35rem;
+}
+
+.folder-link {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-underline-offset: 0.15em;
+}
+
+.folder-link:hover,
+.folder-link:focus-visible {
+  color: var(--ok);
+  outline: none;
+}
+
+.tip-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ok);
+  border: 1px solid #9ed4b4;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.tip-ok[hidden],
+.folder-link[hidden],
+.btn[hidden],
+.btn-ghost[hidden] {
+  display: none !important;
+}
+
+.site-footer {
+  padding: 0 0 2.5rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.site-footer code {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.85em;
+  background: #e8eee9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+@media (min-width: 640px) {
+  .school-item {
+    grid-template-columns: minmax(5rem, auto) 1fr auto;
+  }
+
+  .school-meta {
+    grid-column: auto;
+  }
+
+  .school-actions {
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+}
