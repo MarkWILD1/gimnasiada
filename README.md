@@ -7,9 +7,9 @@ Página estática para organizar el orden de presentaciones y marcar cuándo cad
 1. Abrí `index.html` con doble clic, o subí estos archivos a la [carpeta de Drive](https://drive.google.com/drive/folders/1KvZgpdyrhpoWedFPILttQjql-bU-zBR5?usp=sharing) y abrí el HTML desde ahí.
 2. Buscá tu escuela en **Mañana** o **Tarde**.
 3. Tocá **Subir en Drive**, subí el MP3 a la carpeta compartida.
-4. Volvé a la página y tocá **Ya subí** → aparece el tip **Ok**.
+4. Volvé a la página y tocá **Ya subí** → aparece el tip **Ok** para todos.
 
-Si te equivocaste, usá **Quitar Ok**.
+Si te equivocaste, usá **Quitar Ok** (también se actualiza para todos).
 
 ## Nombre del archivo
 
@@ -21,4 +21,4 @@ Usá el nombre que muestra cada escuela:
 
 ## Nota sobre el tip Ok
 
-El Ok se guarda en el navegador (`localStorage`). En la misma PC/navegador se mantiene al recargar. En otra computadora hay que marcar de nuevo, o verificar mirando la carpeta de Drive.
+El Ok se guarda en un registro compartido online. Cualquier docente que abra la página ve el mismo estado, y permanece después de recargar o cambiar de dispositivo.

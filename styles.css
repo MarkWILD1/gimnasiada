@@ -63,6 +63,17 @@ body {
   max-width: 42rem;
 }
 
+.sync-status {
+  margin: 0.65rem 0 0;
+  font-size: 0.88rem;
+  color: var(--accent);
+  min-height: 1.25em;
+}
+
+.sync-status.is-error {
+  color: var(--danger);
+}
+
 .app {
   display: grid;
   gap: 1.5rem;
