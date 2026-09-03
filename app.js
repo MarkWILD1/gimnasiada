@@ -1,7 +1,7 @@
 const DRIVE_FOLDER_URL =
   "https://drive.google.com/drive/folders/1KvZgpdyrhpoWedFPILttQjql-bU-zBR5?usp=sharing";
 
-/** Shared store: Ok visible para todos los docentes y permanente entre sesiones. */
+/** Shared store: Ok + textos previos visibles para todos los docentes. */
 const STATUS_URL = "https://mantledb.sh/v2/gimnasiada-mp3-ok/status";
 const STATUS_WRITE_KEY =
   "e008d20ce4b601602655788f1253ba324deb28ea7248ac290c395239e46fd074";
@@ -31,6 +31,13 @@ const SESSIONS = [
 
 /** @type {Set<string>} */
 let okSet = new Set();
+/** @type {Record<string, string>} */
+let scripts = {};
+/** @type {Set<string>} */
+const openPanels = new Set();
+/** @type {Record<string, string>} */
+const draftScripts = {};
+
 let busyKey = "";
 let pollTimer = 0;
 
@@ -50,15 +57,39 @@ function sameSet(a, b) {
   return true;
 }
 
-async function fetchOkSet() {
+function sameScripts(a, b) {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if ((a[key] || "") !== (b[key] || "")) return false;
+  }
+  return true;
+}
+
+function normalizeScripts(raw) {
+  /** @type {Record<string, string>} */
+  const next = {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return next;
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof value === "string" && value.trim()) {
+      next[String(key)] = value.trim();
+    }
+  }
+  return next;
+}
+
+async function fetchStatus() {
   const res = await fetch(STATUS_URL, { cache: "no-store" });
   if (!res.ok) throw new Error(`No se pudo leer el estado (${res.status})`);
   const data = await res.json();
-  const keys = Array.isArray(data?.keys) ? data.keys.map(String) : [];
-  return new Set(keys);
+  return {
+    keys: new Set(Array.isArray(data?.keys) ? data.keys.map(String) : []),
+    scripts: normalizeScripts(data?.scripts),
+  };
 }
 
-async function writeOkSet(keys) {
+async function writeStatus(nextKeys, nextScripts) {
   const res = await fetch(STATUS_URL, {
     method: "POST",
     headers: {
@@ -66,7 +97,8 @@ async function writeOkSet(keys) {
       "X-Mantle-Key": STATUS_WRITE_KEY,
     },
     body: JSON.stringify({
-      keys: [...keys].sort(),
+      keys: [...nextKeys].sort(),
+      scripts: nextScripts,
       updatedAt: new Date().toISOString(),
     }),
   });
@@ -74,31 +106,48 @@ async function writeOkSet(keys) {
 }
 
 /**
- * Apply a local change on top of the latest remote set (retry on races).
- * @param {(remote: Set<string>) => Set<string>} mutate
+ * @param {(remote: { keys: Set<string>, scripts: Record<string, string> }) => { keys: Set<string>, scripts: Record<string, string> }} mutate
  */
 async function updateShared(mutate) {
   for (let attempt = 0; attempt < 4; attempt++) {
-    const remote = await fetchOkSet();
-    const next = mutate(new Set(remote));
-    await writeOkSet(next);
-    const verified = await fetchOkSet();
-    okSet = verified;
-    if (sameSet(verified, next)) return verified;
+    const remote = await fetchStatus();
+    const next = mutate({
+      keys: new Set(remote.keys),
+      scripts: { ...remote.scripts },
+    });
+    await writeStatus(next.keys, next.scripts);
+    const verified = await fetchStatus();
+    okSet = verified.keys;
+    scripts = verified.scripts;
+    if (
+      sameSet(verified.keys, next.keys) &&
+      sameScripts(verified.scripts, next.scripts)
+    ) {
+      return verified;
+    }
   }
-  return okSet;
+  return { keys: okSet, scripts };
 }
 
 function markOk(key) {
   return updateShared((remote) => {
-    remote.add(key);
+    remote.keys.add(key);
     return remote;
   });
 }
 
 function unmarkOk(key) {
   return updateShared((remote) => {
-    remote.delete(key);
+    remote.keys.delete(key);
+    return remote;
+  });
+}
+
+function saveScript(key, text) {
+  const cleaned = text.trim();
+  return updateShared((remote) => {
+    if (cleaned) remote.scripts[key] = cleaned;
+    else delete remote.scripts[key];
     return remote;
   });
 }
@@ -110,14 +159,23 @@ function setStatusMessage(text, isError = false) {
   el.classList.toggle("is-error", isError);
 }
 
+function isEditingTextarea() {
+  const active = document.activeElement;
+  return Boolean(active && active.matches("textarea.script-input"));
+}
+
 function createSchoolItem(sessionId, blockId, schoolId) {
   const key = schoolKey(sessionId, blockId, schoolId);
   const isOk = okSet.has(key);
   const filename = suggestedFilename(schoolId);
   const isBusy = busyKey === key;
+  const hasScript = Boolean(scripts[key]);
+  const isOpen = openPanels.has(key);
+  const draft =
+    key in draftScripts ? draftScripts[key] : scripts[key] || "";
 
   const li = document.createElement("li");
-  li.className = `school-item${isOk ? " is-ok" : ""}`;
+  li.className = `school-item${isOk ? " is-ok" : ""}${hasScript ? " has-script" : ""}`;
   li.dataset.key = key;
 
   const idEl = document.createElement("div");
@@ -134,6 +192,28 @@ function createSchoolItem(sessionId, blockId, schoolId) {
 
   const actions = document.createElement("div");
   actions.className = "school-actions";
+
+  const scriptBtn = document.createElement("button");
+  scriptBtn.type = "button";
+  scriptBtn.className = `btn btn-script${hasScript ? " has-text" : ""}${isOpen ? " is-open" : ""}`;
+  scriptBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  scriptBtn.textContent = hasScript
+    ? isOpen
+      ? "Ocultar texto"
+      : "Ver / editar texto"
+    : isOpen
+      ? "Ocultar texto"
+      : "Texto previo";
+  scriptBtn.addEventListener("click", () => {
+    if (openPanels.has(key)) {
+      openPanels.delete(key);
+      delete draftScripts[key];
+    } else {
+      openPanels.add(key);
+      draftScripts[key] = scripts[key] || "";
+    }
+    render();
+  });
 
   const driveBtn = document.createElement("a");
   driveBtn.className = "btn btn-primary";
@@ -201,9 +281,61 @@ function createSchoolItem(sessionId, blockId, schoolId) {
     }
   });
 
-  actions.append(driveBtn, doneBtn, folderLink, tip, undoBtn);
+  actions.append(scriptBtn, driveBtn, doneBtn, folderLink, tip, undoBtn);
   meta.append(fileEl, actions);
   li.append(idEl, meta);
+
+  if (isOpen) {
+    const panel = document.createElement("div");
+    panel.className = "script-panel";
+
+    const label = document.createElement("label");
+    label.className = "script-label";
+    label.htmlFor = `script-${key}`;
+    label.textContent =
+      "Texto para decir antes de la presentación de esta escuela:";
+
+    const textarea = document.createElement("textarea");
+    textarea.id = `script-${key}`;
+    textarea.className = "script-input";
+    textarea.rows = 4;
+    textarea.placeholder =
+      "Ej.: Presentamos a la Escuela N°… con su coreografía…";
+    textarea.value = draft;
+    textarea.disabled = isBusy;
+    textarea.addEventListener("input", () => {
+      draftScripts[key] = textarea.value;
+    });
+
+    const panelActions = document.createElement("div");
+    panelActions.className = "script-panel-actions";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "btn btn-primary";
+    saveBtn.textContent = isBusy ? "Guardando…" : "Guardar texto";
+    saveBtn.disabled = isBusy;
+    saveBtn.addEventListener("click", async () => {
+      if (busyKey) return;
+      busyKey = key;
+      draftScripts[key] = textarea.value;
+      render();
+      try {
+        await saveScript(key, draftScripts[key] || "");
+        setStatusMessage("Texto guardado para todos los docentes.");
+      } catch (err) {
+        console.error(err);
+        setStatusMessage("No se pudo guardar el texto. Probá de nuevo.", true);
+      } finally {
+        busyKey = "";
+        render();
+      }
+    });
+
+    panelActions.append(saveBtn);
+    panel.append(label, textarea, panelActions);
+    li.append(panel);
+  }
 
   return li;
 }
@@ -250,11 +382,17 @@ function render() {
 }
 
 async function refreshFromServer({ silent = false } = {}) {
-  if (busyKey) return;
+  if (busyKey || isEditingTextarea()) return;
   try {
-    const remote = await fetchOkSet();
-    if (!sameSet(remote, okSet)) {
-      okSet = remote;
+    const remote = await fetchStatus();
+    const changed =
+      !sameSet(remote.keys, okSet) || !sameScripts(remote.scripts, scripts);
+    if (changed) {
+      okSet = remote.keys;
+      scripts = remote.scripts;
+      for (const key of Object.keys(draftScripts)) {
+        if (!openPanels.has(key)) delete draftScripts[key];
+      }
       render();
       if (!silent) setStatusMessage("Lista actualizada.");
     } else if (!silent) {
@@ -285,9 +423,11 @@ async function init() {
   render();
   setStatusMessage("Cargando registro compartido…");
   try {
-    okSet = await fetchOkSet();
+    const remote = await fetchStatus();
+    okSet = remote.keys;
+    scripts = remote.scripts;
     render();
-    setStatusMessage("Sincronizado: el Ok se comparte entre todos los docentes.");
+    setStatusMessage("Sincronizado: Ok y textos se comparten entre docentes.");
   } catch (err) {
     console.error(err);
     setStatusMessage("No se pudo cargar el registro. Recargá la página.", true);
