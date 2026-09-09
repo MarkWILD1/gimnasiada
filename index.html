@@ -16,10 +16,85 @@
         <strong>Ya subí</strong>. Con <strong>Texto previo</strong> escribí lo que
         querés que se diga antes de la presentación.
       </p>
+      <div
+        id="upload-progress"
+        class="upload-progress"
+        role="status"
+        aria-live="polite"
+        aria-label="0 de 36 escuelas ya subieron el MP3"
+      >
+        <p class="progress-nums">
+          <strong id="ok-count">0</strong>
+          <span class="progress-sep">/</span>
+          <span id="total-count">36</span>
+        </p>
+        <p class="progress-label">escuelas ya subieron el MP3</p>
+        <div class="progress-track" aria-hidden="true">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+      </div>
       <p id="sync-status" class="sync-status" role="status" aria-live="polite"></p>
+
+      <nav class="tabs" role="tablist" aria-label="Vistas">
+        <button
+          type="button"
+          class="tab is-active"
+          id="tab-orden"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-orden"
+          data-tab="orden"
+        >
+          Orden de presentación
+        </button>
+        <button
+          type="button"
+          class="tab"
+          id="tab-drive"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-drive"
+          data-tab="drive"
+        >
+          Carpeta Drive
+        </button>
+      </nav>
     </header>
 
-    <main id="app" class="app" aria-live="polite"></main>
+    <div
+      id="panel-orden"
+      class="tab-panel"
+      role="tabpanel"
+      aria-labelledby="tab-orden"
+    >
+      <main id="app" class="app" aria-live="polite"></main>
+    </div>
+
+    <section
+      id="panel-drive"
+      class="tab-panel drive-panel"
+      role="tabpanel"
+      aria-labelledby="tab-drive"
+      hidden
+    >
+      <p class="drive-toolbar">
+        <a
+          class="btn btn-primary"
+          href="https://drive.google.com/drive/folders/1KvZgpdyrhpoWedFPILttQjql-bU-zBR5?usp=sharing"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Abrir en Drive
+        </a>
+      </p>
+      <iframe
+        class="drive-frame"
+        title="Carpeta de Drive de la Gimnasiada"
+        src="https://drive.google.com/embeddedfolderview?id=1KvZgpdyrhpoWedFPILttQjql-bU-zBR5"
+        referrerpolicy="no-referrer"
+        loading="lazy"
+      ></iframe>
+    </section>
 
     <footer class="site-footer">
       <p>

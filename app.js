@@ -1,5 +1,5 @@
-const DRIVE_FOLDER_URL =
-  "https://drive.google.com/drive/folders/1KvZgpdyrhpoWedFPILttQjql-bU-zBR5?usp=sharing";
+const DRIVE_FOLDER_ID = "1KvZgpdyrhpoWedFPILttQjql-bU-zBR5";
+const DRIVE_FOLDER_URL = `https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}?usp=sharing`;
 
 /** Shared store: Ok + textos previos visibles para todos los docentes. */
 const STATUS_URL = "https://mantledb.sh/v2/gimnasiada-mp3-ok/status";
@@ -13,9 +13,9 @@ const SESSIONS = [
     id: "manana",
     label: "Mañana",
     blocks: [
-      { id: 1, schools: ["2", "1", "108", "155", "139", "140"] },
+      { id: 1, schools: ["64", "2", "1", "108", "155", "139"] },
       { id: 2, schools: ["137", "145", "134", "111", "94", "113", "149"] },
-      { id: 3, schools: ["115", "110", "86", "64", "88"] },
+      { id: 3, schools: ["115", "110", "86", "88"] },
     ],
   },
   {
@@ -43,6 +43,83 @@ let pollTimer = 0;
 
 function schoolKey(sessionId, blockId, schoolId) {
   return `${sessionId}-${blockId}-${schoolId}`;
+}
+
+function listedSchoolKeys() {
+  /** @type {string[]} */
+  const keys = [];
+  for (const session of SESSIONS) {
+    for (const block of session.blocks) {
+      for (const schoolId of block.schools) {
+        keys.push(schoolKey(session.id, block.id, schoolId));
+      }
+    }
+  }
+  return keys;
+}
+
+function progressCounts() {
+  const keys = listedSchoolKeys();
+  let done = 0;
+  for (const key of keys) {
+    if (okSet.has(key)) done += 1;
+  }
+  return { done, total: keys.length };
+}
+
+function updateProgress() {
+  const { done, total } = progressCounts();
+  const okEl = document.getElementById("ok-count");
+  const totalEl = document.getElementById("total-count");
+  const bar = document.getElementById("progress-bar");
+  const wrap = document.getElementById("upload-progress");
+  if (okEl) okEl.textContent = String(done);
+  if (totalEl) totalEl.textContent = String(total);
+  if (bar) bar.style.width = total ? `${(done / total) * 100}%` : "0%";
+  if (wrap) {
+    wrap.setAttribute(
+      "aria-label",
+      `${done} de ${total} escuelas ya subieron el MP3`
+    );
+  }
+}
+
+function tabFromHash() {
+  return location.hash === "#drive" ? "drive" : "orden";
+}
+
+function setActiveTab(tab) {
+  const isDrive = tab === "drive";
+  const ordenBtn = document.getElementById("tab-orden");
+  const driveBtn = document.getElementById("tab-drive");
+  const ordenPanel = document.getElementById("panel-orden");
+  const drivePanel = document.getElementById("panel-drive");
+  if (!ordenBtn || !driveBtn || !ordenPanel || !drivePanel) return;
+
+  ordenBtn.classList.toggle("is-active", !isDrive);
+  driveBtn.classList.toggle("is-active", isDrive);
+  ordenBtn.setAttribute("aria-selected", String(!isDrive));
+  driveBtn.setAttribute("aria-selected", String(isDrive));
+  ordenPanel.hidden = isDrive;
+  drivePanel.hidden = !isDrive;
+}
+
+function initTabs() {
+  document.querySelectorAll("[data-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tab = btn.getAttribute("data-tab") === "drive" ? "drive" : "orden";
+      const nextHash = tab === "drive" ? "#drive" : "#orden";
+      if (location.hash === nextHash) {
+        setActiveTab(tab);
+        return;
+      }
+      location.hash = nextHash;
+    });
+  });
+  window.addEventListener("hashchange", () => {
+    setActiveTab(tabFromHash());
+  });
+  setActiveTab(tabFromHash());
 }
 
 function suggestedFilename(schoolId) {
@@ -341,6 +418,7 @@ function createSchoolItem(sessionId, blockId, schoolId) {
 }
 
 function render() {
+  updateProgress();
   const root = document.getElementById("app");
   if (!root) return;
 
@@ -420,6 +498,7 @@ function startPolling() {
 }
 
 async function init() {
+  initTabs();
   render();
   setStatusMessage("Cargando registro compartido…");
   try {
